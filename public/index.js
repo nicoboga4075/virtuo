@@ -158,6 +158,130 @@ const actors = [{
   }]
 }];
 
-console.log(cars);
-console.log(rentals);
+function step1(rentals, cars) {
+    for (var i = 0; i < rentals.length; i++) {
+        var datePick = new Date(rentals[i].pickupDate);
+        var dateReturn = new Date(rentals[i].returnDate);
+        var priceDay = 0;
+        var priceKM = 0;
+        var distance = rentals[i].distance;
+        for (var j = 0; j < cars.length; j++) {
+            if (rentals[i].carId == cars[j].id) {
+                priceDay = cars[j].pricePerDay;
+                priceKM = cars[j].pricePerKm;
+            }
+        }
+        rentals[i].price = rental_price(datePick, dateReturn, priceDay, priceKM, distance);
+    }
+
+}
+function rental_price(datePick, dateReturn, priceDay, priceKM, distance) {
+    var Day = day(datePick, dateReturn) + 1;
+    return Day * priceDay + distance * priceKM;
+}
+
+function day(datePick, dateReturn) {
+    return (dateReturn - datePick) / (1000 * 60 * 60 * 24);
+
+}
+
+function step2(rentals) {
+    for (var i = 0; i < rentals.length; i++) {
+        var datePick = new Date(rentals[i].pickupDate);
+        var dateReturn = new Date(rentals[i].returnDate);
+        var difference = day(datePick, dateReturn);
+        if (difference >= 1 && difference < 4) {
+            rentals[i].price = rentals[i].price * 0.9;
+        }
+        else if (difference >= 4 && difference < 10) {
+            rentals[i].price = rentals[i].price * 0.7;
+        }
+
+        else { rentals[i].price = rentals[i].price * 0.5; }
+
+
+    }
+
+}
+
+function step3(rentals) {
+    for (var i = 0; i < rentals.length; i++) {
+        var commission = 0.3 * rentals[i].price;
+        var datePick = new Date(rentals[i].pickupDate);
+        var dateReturn = new Date(rentals[i].returnDate);
+        var difference = day(datePick, dateReturn);
+        rentals[i].commission['insurance'] = 0.5 * commission;
+        rentals[i].commission['treasury'] = difference * 1;
+        rentals[i].commission['virtuo'] = commission - rentals[i].commission['insurance'] - rentals[i].commission['treasury']
+       
+    }
+}
+
+function step4(rentals) {
+    for (var i = 0; i < rentals.length; i++) {
+        if (rentals[i].options['deductibleReduction'] == 'true') {
+            var datePick = new Date(rentals[i].pickupDate);
+            var dateReturn = new Date(rentals[i].returnDate);
+            var difference = day(datePick, dateReturn);
+            rentals[i].price += 4 * difference;
+        }
+    }
+}
+
+function step5(rentals, actors) {
+    for (var i = 0; i < rentals.length; i++) {
+        for (var j = 0; j < actors[i]['payment'].length; j++) {
+            if (actors[i]['payment'][j]['who'] == 'driver') {
+                var datePick = new Date(rentals[i].pickupDate);
+                var dateReturn = new Date(rentals[i].returnDate);
+                var difference = day(datePick, dateReturn);
+                var reduction = 4 * difference;
+
+                if (rentals[i].options['deductibleReduction'] == 'true') {
+                    actors[i]['payment'][j]['amount'] = rentals[i].price + reduction;
+
+                }
+                else { actors[i]['payment'][j]['amount'] = rentals[i].price; }
+
+            }
+
+            else if (actors[i]['payment'][j]['who'] == 'partner') {
+                actors[i]['payment'][j]['amount'] = 0.7 * rentals[i].price;
+            }
+            else if (actors[i]['payment'][j]['who'] == 'insurance') {
+                actors[i]['payment'][j]['amount'] = rentals[i].commission['insurance'];
+            }
+
+            else if (actors[i]['payment'][j]['who'] == 'treasury') {
+                actors[i]['payment'][j]['amount'] = rentals[i].commission['treasury'];
+            }
+
+            else {
+                var datePick = new Date(rentals[i].pickupDate);
+                var dateReturn = new Date(rentals[i].returnDate);
+                var difference = day(datePick, dateReturn);
+                var reduction = 4 * difference;
+
+                if (rentals[i].options['deductibleReduction'] == 'true') {
+                    actors[i]['payment'][j]['amount'] = rentals[i].commission['virtuo'] + reduction;
+
+                }
+                else {
+                    actors[i]['payment'][j]['amount'] = rentals[i].commission['virtuo'];
+                }
+
+            }
+        }
+    }
+}
+
+    
+
+step1(rentals, cars);
+step2(rentals);
+step3(rentals);
+step4(rentals);
+step5(rentals, actors);
+
+//console.log(rentals);
 console.log(actors);
